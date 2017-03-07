@@ -115,7 +115,7 @@ void displayNetwork(int line, String ssid, int rssi){
 void listNetworks() {
   // scan for nearby networks:
   Serial.println("\n** Scan Networks **");
-  int numSsid = WiFi.scanNetworks();
+  int numSsid = WiFi.scanNetworks(false, true);
   if (numSsid == -1) {
     Serial.println("Couldn't get a wifi connection");
     while (true);
