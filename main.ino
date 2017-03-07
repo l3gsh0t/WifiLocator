@@ -3,12 +3,7 @@ Author: Matthew Waddell
 Use: ESP SSID Fun
 *********************************************************************/
 
-//includes for 1306
-#include <SPI.h>
-#include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
-//includes for ESP8266
 #include <ESP8266WiFi.h>
 
 //Settings
@@ -109,9 +104,17 @@ void printEncryptionType(int thisType) {
   }
 }
 
+void displayNetwork(int line, String ssid, int rssi){
+  if (ssid.length() < 1) { ssid = "<hidden>"; }
+  display.setCursor(0,8*line);
+  display.print(ssid.substring(0,16));
+  display.setCursor(105,8*line);
+  display.println(rssi);
+}
+
 void listNetworks() {
   // scan for nearby networks:
-  Serial.println("** Scan Networks **");
+  Serial.println("\n** Scan Networks **");
   int numSsid = WiFi.scanNetworks();
   if (numSsid == -1) {
     Serial.println("Couldn't get a wifi connection");
@@ -123,18 +126,14 @@ void listNetworks() {
   Serial.println(numSsid);
 
   // print the network number and name for each network found:
-  for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-    Serial.print(thisNet + 1);
-    Serial.print(") ");
-    Serial.print(WiFi.SSID(thisNet));
-    Serial.print("\tSignal: ");
-    Serial.print(WiFi.RSSI(thisNet));
-    Serial.print(" dBm");
-    Serial.print("\tEncryption: ");
+ for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+    String ssid = WiFi.SSID(thisNet);
+    if (ssid.length() < 1) { ssid = "<hidden>"; }
+    Serial.print(int(thisNet + 1) + String(") ") + ssid + String("\tSignal: ") + WiFi.RSSI(thisNet) + String(" dBm\tEncryption: "));
     printEncryptionType(WiFi.encryptionType(thisNet));
   }
 
-  // get top 3 network signals
+  // get top 6 network signals
   int firstpos = -1, secondpos = -1, thirdpos = -1, fourthpos = -1, fifthpos = -1, sixthpos = -1;
 
   if (numSsid > 0) {
@@ -195,53 +194,16 @@ void listNetworks() {
     }
   }
 
-  display.clearDisplay();
-  
+  display.clearDisplay(); 
   display.setCursor(0,0);
-  display.print("Networks: ");
-  display.println(numSsid);
+  display.println(String("Networks: ") + numSsid);
 
-  if (numSsid > 0) {
-    display.setCursor(0,8*2);
-    display.print(WiFi.SSID(firstpos).substring(0,16));
-    display.setCursor(105,8*2);
-    display.println(WiFi.RSSI(firstpos));
-  }
-
-  if (numSsid > 1) {
-    display.setCursor(0,8*3);
-    display.print(WiFi.SSID(secondpos).substring(0,16));
-    display.setCursor(105,8*3);
-    display.println(WiFi.RSSI(secondpos));
-  }
-
-  if (numSsid > 2) {
-    display.setCursor(0,8*4);
-    display.print(WiFi.SSID(thirdpos).substring(0,16));
-    display.setCursor(105,8*4);
-    display.println(WiFi.RSSI(thirdpos));
-  }
-
-  if (numSsid > 3) {
-    display.setCursor(0,8*5);
-    display.print(WiFi.SSID(fourthpos).substring(0,16));
-    display.setCursor(105,8*5);
-    display.println(WiFi.RSSI(fourthpos));
-  }
-
-  if (numSsid > 4) {
-    display.setCursor(0,8*6);
-    display.print(WiFi.SSID(fifthpos).substring(0,16));
-    display.setCursor(105,8*6);
-    display.println(WiFi.RSSI(fifthpos));
-  }
-
-  if (numSsid > 5) {
-    display.setCursor(0,8*7);
-    display.print(WiFi.SSID(sixthpos).substring(0,16));
-    display.setCursor(105,8*7);
-    display.println(WiFi.RSSI(sixthpos));
-  }
+  if (numSsid > 0) { displayNetwork(2, WiFi.SSID(firstpos), WiFi.RSSI(firstpos)); }
+  if (numSsid > 1) { displayNetwork(3, WiFi.SSID(secondpos), WiFi.RSSI(secondpos)); }
+  if (numSsid > 2) { displayNetwork(4, WiFi.SSID(thirdpos), WiFi.RSSI(thirdpos)); }
+  if (numSsid > 3) { displayNetwork(5, WiFi.SSID(fourthpos), WiFi.RSSI(fourthpos)); }
+  if (numSsid > 4) { displayNetwork(6, WiFi.SSID(fifthpos), WiFi.RSSI(fifthpos)); }
+  if (numSsid > 5) { displayNetwork(7, WiFi.SSID(sixthpos), WiFi.RSSI(sixthpos)); }
   
   display.display();
 }
@@ -261,10 +223,6 @@ void setup(void)   {
   display.drawBitmap(0, 8,  logo, 128, 64, WHITE);
   display.display();
   delay(1000);
-  
-  Serial.println("");
-  Serial.println("");
-
 }
 
 void loop() {
