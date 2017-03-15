@@ -5,17 +5,16 @@ Use: ESP SSID Fun
 
 #include <Adafruit_SSD1306.h>
 #include <ESP8266WiFi.h>
+#include "myfunc.h"
 
-//Settings
+// SSD1306 Settings
 #define OLED_RESET LED_BUILTIN //4
 Adafruit_SSD1306 display(OLED_RESET);
-const int led = 13;
-
-//check if screen is set correctly
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+// Troll face BMP
 const unsigned char PROGMEM logo [] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -83,27 +82,7 @@ const unsigned char PROGMEM logo [] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 
 };
 
-void printEncryptionType(int thisType) {
-  // read the encryption type and print out the name:
-  switch (thisType) {
-    case ENC_TYPE_WEP:
-      Serial.println("WEP");
-      break;
-    case ENC_TYPE_TKIP:
-      Serial.println("WPA");
-      break;
-    case ENC_TYPE_CCMP:
-      Serial.println("WPA2");
-      break;
-    case ENC_TYPE_NONE:
-      Serial.println("None");
-      break;
-    case ENC_TYPE_AUTO:
-      Serial.println("Auto");
-      break;
-  }
-}
-
+//==============================================================================================
 void displayNetwork(int line, String ssid, int rssi){
   if (ssid.length() < 1) { ssid = "<hidden>"; }
   display.setCursor(0,8*line);
@@ -112,106 +91,50 @@ void displayNetwork(int line, String ssid, int rssi){
   display.println(rssi);
 }
 
+//==============================================================================================
 void listNetworks() {
-  // scan for nearby networks:
+  // Scan for nearby networks
   Serial.println("\n** Scan Networks **");
-  int numSsid = WiFi.scanNetworks(false, true);
-  if (numSsid == -1) {
+  int networkCount = -1;
+  networkCount = WiFi.scanNetworks(false, true); // scanNetworks(async, hidden)
+  if (networkCount == -1) {
     Serial.println("Couldn't get a wifi connection");
     while (true);
   }
 
-  // print the list of networks seen:
+  // Print list of networks to serial
   Serial.print("Number of available networks: ");
-  Serial.println(numSsid);
+  Serial.println(networkCount);
 
-  // print the network number and name for each network found:
- for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+  // Print each network number, ssid, rssi, and encryption type
+ for (int thisNet = 0; thisNet < networkCount; thisNet++) {
     String ssid = WiFi.SSID(thisNet);
     if (ssid.length() < 1) { ssid = "<hidden>"; }
     Serial.print(int(thisNet + 1) + String(") ") + ssid + String("\tSignal: ") + WiFi.RSSI(thisNet) + String(" dBm\tEncryption: "));
     printEncryptionType(WiFi.encryptionType(thisNet));
   }
 
-  // get top 6 network signals
-  int firstpos = -1, secondpos = -1, thirdpos = -1, fourthpos = -1, fifthpos = -1, sixthpos = -1;
-
-  if (numSsid > 0) {
-    for (int i=0; i<numSsid; i++) {
-      if (firstpos == -1 || WiFi.RSSI(firstpos) < WiFi.RSSI(i)) {
-        firstpos = i;
-      }
-    }
-  }
+  // Print top six networks to OLED
+  int *sortedNetwork = iterateNetworks(networkCount);
   
-  if (numSsid > 1) {
-    for (int i=0; i<numSsid; i++) {
-      if (i != firstpos) {
-        if (secondpos == -1 || WiFi.RSSI(secondpos) < WiFi.RSSI(i)) {
-          secondpos = i;
-        }
-      }
-    }
-  }
-
-  if (numSsid > 2) {
-    for (int i=0; i<numSsid; i++) {
-      if (i != firstpos && i != secondpos) {
-        if (thirdpos == -1 || WiFi.RSSI(thirdpos) < WiFi.RSSI(i)) {
-          thirdpos = i;
-        }
-      }
-    }
-  }
-
-  if (numSsid > 3) {
-    for (int i=0; i<numSsid; i++) {
-      if (i != firstpos && i != secondpos && i != thirdpos) {
-        if (fourthpos == -1 || WiFi.RSSI(fourthpos) < WiFi.RSSI(i)) {
-          fourthpos = i;
-        }
-      }
-    }
-  }
-
-  if (numSsid > 4) {
-    for (int i=0; i<numSsid; i++) {
-      if (i != firstpos && i != secondpos && i != thirdpos && i != fourthpos) {
-        if (fifthpos == -1 || WiFi.RSSI(fifthpos) < WiFi.RSSI(i)) {
-          fifthpos = i;
-        }
-      }
-    }
-  }
-
-  if (numSsid > 5) {
-    for (int i=0; i<numSsid; i++) {
-      if (i != firstpos && i != secondpos && i != thirdpos && i != fourthpos && i != fifthpos) {
-        if (sixthpos == -1 || WiFi.RSSI(sixthpos) < WiFi.RSSI(i)) {
-          sixthpos = i;
-        }
-      }
-    }
-  }
-
   display.clearDisplay(); 
   display.setCursor(0,0);
-  display.println(String("Networks: ") + numSsid);
+  display.println(String("Networks: ") + networkCount);
 
-  if (numSsid > 0) { displayNetwork(2, WiFi.SSID(firstpos), WiFi.RSSI(firstpos)); }
-  if (numSsid > 1) { displayNetwork(3, WiFi.SSID(secondpos), WiFi.RSSI(secondpos)); }
-  if (numSsid > 2) { displayNetwork(4, WiFi.SSID(thirdpos), WiFi.RSSI(thirdpos)); }
-  if (numSsid > 3) { displayNetwork(5, WiFi.SSID(fourthpos), WiFi.RSSI(fourthpos)); }
-  if (numSsid > 4) { displayNetwork(6, WiFi.SSID(fifthpos), WiFi.RSSI(fifthpos)); }
-  if (numSsid > 5) { displayNetwork(7, WiFi.SSID(sixthpos), WiFi.RSSI(sixthpos)); }
-  
+  for (int i=0; i<6; i++) {
+    if (networkCount > i) { 
+      displayNetwork(i+2, WiFi.SSID(sortedNetwork[i]), WiFi.RSSI(sortedNetwork[i]));
+    }
+  }
+
   display.display();
 }
 
-void setup(void)   {                
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
+//==============================================================================================
+void setup(void) {
   Serial.begin(9600);
+  Serial.println(String("\nESP8266 Mac: ") + WiFi.macAddress());
+  Serial.println(String("ESP8266 Status: ") + WiFi.status());
 
   // Initialize screen
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -223,8 +146,13 @@ void setup(void)   {
   display.drawBitmap(0, 8,  logo, 128, 64, WHITE);
   display.display();
   delay(1000);
+
+  // Set Wifi to station mode and disconnect from previous connections
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
 }
 
+//==============================================================================================
 void loop() {
   listNetworks();
 }
