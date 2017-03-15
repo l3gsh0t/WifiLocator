@@ -110,8 +110,7 @@ void listNetworks() {
  for (int thisNet = 0; thisNet < networkCount; thisNet++) {
     String ssid = WiFi.SSID(thisNet);
     if (ssid.length() < 1) { ssid = "<hidden>"; }
-    Serial.print(int(thisNet + 1) + String(") ") + ssid + String("\tSignal: ") + WiFi.RSSI(thisNet) + String(" dBm\tEncryption: "));
-    printEncryptionType(WiFi.encryptionType(thisNet));
+    Serial.println(int(thisNet + 1) + String(") ") + ssid + String("\tSignal: ") + WiFi.RSSI(thisNet) + String(" dBm\tEncryption: ") + encryptType(WiFi.encryptionType(thisNet)));
   }
 
   // Print top six networks to OLED
