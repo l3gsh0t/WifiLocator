@@ -24,23 +24,19 @@ int * iterateNetworks(int networkCount) {
 }
 
 //==============================================================================================
-void printEncryptionType(int thisType) {
-  // read the encryption type and print out the name:
-  switch (thisType) {
-    case ENC_TYPE_WEP:
-      Serial.println("WEP");
-      break;
-    case ENC_TYPE_TKIP:
-      Serial.println("WPA");
-      break;
-    case ENC_TYPE_CCMP:
-      Serial.println("WPA2");
-      break;
-    case ENC_TYPE_NONE:
-      Serial.println("None");
-      break;
-    case ENC_TYPE_AUTO:
-      Serial.println("Auto");
-      break;
-  }
+String encryptType(uint8_t type) {
+    switch(type) {
+        case ENC_TYPE_NONE:
+            return "None";
+        case ENC_TYPE_WEP:
+            return "WEP";
+        case ENC_TYPE_TKIP:
+            return "WPA";
+        case ENC_TYPE_CCMP:
+            return "WPA2";
+        case ENC_TYPE_AUTO:
+            return "AUTO";
+        default:
+            return "Unknown";
+    }
 }
